@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -8,6 +7,11 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 let connectedUsers = {};
+
+// Serve a simple message at the root path
+app.get('/', (req, res) => {
+  res.send('Signaling server is running.');
+});
 
 io.on('connection', (socket) => {
   connectedUsers[socket.id] = socket;
