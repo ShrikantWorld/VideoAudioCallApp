@@ -1,55 +1,30 @@
-const express = require('express');
 const path = require('path');
+const express = require('express');
 const { createServer } = require('http');
-const socketIO = require('socket.io');
+const { getIO, initIO } = require('./socket'); // Importing your socket functions
 
-// Initialize Express
+// Create Express app
 const app = express();
 
-// Serve static files from a 'static' directory
+// Serve static files (optional if you have a static directory)
 app.use('/', express.static(path.join(__dirname, 'static')));
 
-// Create HTTP server
+// Create HTTP server and integrate with Express
 const httpServer = createServer(app);
 
-// Initialize Socket.IO with the created HTTP server
-const io = socketIO(httpServer);
+// Initialize the custom Socket.IO setup with the HTTP server
+initIO(httpServer);
 
-let connectedUsers = {};
-
-// Handle Socket.IO connections
-io.on('connection', (socket) => {
-  connectedUsers[socket.id] = socket;
-
-  // Emit updated user list
-  io.emit('updateUserList', Object.keys(connectedUsers));
-
-  // Handle call initiation
-  socket.on('startCall', (data) => {
-    const { to } = data;
-    if (connectedUsers[to]) {
-      connectedUsers[to].emit('callIncoming', socket.id);
-    }
-  });
-
-  // Handle signal exchange
-  socket.on('signal', (data) => {
-    const { to, ...signalData } = data;
-    if (connectedUsers[to]) {
-      connectedUsers[to].emit('signal', { from: socket.id, ...signalData });
-    }
-  });
-
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    delete connectedUsers[socket.id];
-    io.emit('updateUserList', Object.keys(connectedUsers));
-  });
-});
-
-// Set the server to listen on the specified port or default to 3500
-let port = process.env.PORT || 3500;
-
+// Listen on the appropriate port (defined by environment or default to 3500)
+const port = process.env.PORT || 3500;
 httpServer.listen(port, () => {
   console.log("Server started on port", port);
+});
+
+// Fetch and log the IO instance for confirmation
+getIO();
+
+// Define a basic route for the root path
+app.get('/', (req, res) => {
+  res.send('Signaling server is running.');
 });
